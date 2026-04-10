@@ -519,7 +519,8 @@ print("✅ Emotion Model Loaded Successfully!")
 # Whisper Speech Model
 # -----------------------------
 print("🎤 Loading Whisper Model...")
-whisper_model = whisper.load_model("base")
+# whisper_model = whisper.load_model("base")
+whisper_model = whisper.load_model("tiny")
 print("✅ Whisper Model Loaded!")
 
 # -----------------------------
@@ -1078,5 +1079,8 @@ async def speech_api(audio: UploadFile = File(...)):
     #     debug=True,
     #     use_reloader=False
     # )
+# if __name__ == "__main__":
+#     uvicorn.run("app:fastapi_app", host="0.0.0.0", port=7860)
 if __name__ == "__main__":
-    uvicorn.run("app:fastapi_app", host="0.0.0.0", port=7860)
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("app:fastapi_app", host="0.0.0.0", port=port)
