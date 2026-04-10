@@ -1,8 +1,20 @@
 
 
+# # the real-one
+# # ------------------------------------------------------------------------------------------------
 
+
+# from fastapi import FastAPI, UploadFile, File
+# from fastapi.middleware.cors import CORSMiddleware
+# import uvicorn
 # # from collections import Counter
 # # from pydoc import text
+# import traceback
+# from dotenv import load_dotenv
+# load_dotenv()
+# # load_dotenv("../backend/.env")
+# import os
+# YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 # from flask_cors import CORS
 # from flask import Flask, request, jsonify
 # from transformers import pipeline
@@ -11,7 +23,7 @@
 # import json
 # import random
 # import requests
-# import whisper
+# # import whisper
 # import os
 # import re
 # # from datasets import load_dataset
@@ -19,6 +31,19 @@
 
 # app = Flask(__name__)
 # CORS(app)
+
+# fastapi_app = FastAPI()
+# @fastapi_app.get("/")
+# def home():
+#     return {"message": "SoulEase Emotion API is running 🚀"}
+
+# fastapi_app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # print("🔥 Starting SoulEase Emotion Server...")
 # print("🔥 Loading Pretrained Emotion Model...")
@@ -39,13 +64,15 @@
 # # Whisper Speech Model
 # # -----------------------------
 # print("🎤 Loading Whisper Model...")
-# whisper_model = whisper.load_model("base")
+# # whisper_model = whisper.load_model("base")
+# # whisper_model = whisper.load_model("tiny")
 # print("✅ Whisper Model Loaded!")
 
 # # -----------------------------
 # # MongoDB Connection
 # # -----------------------------
-# client = MongoClient("mongodb://127.0.0.1:27017/")
+# # client = MongoClient("mongodb://127.0.0.1:27017/")
+# MongoClient(os.environ.get("MONGO_URI"))
 # db = client["soulease"]
 # journal_collection = db["journal_entries"]
 
@@ -104,7 +131,8 @@
 
 #     try:
 
-#         response = requests.get(url).json()
+#         # response = requests.get(url).json()
+#         response = requests.get(url, timeout=5).json()
 
 #         music_results = []
 
@@ -144,7 +172,8 @@
 
 #     try:
 
-#         response = requests.get(url).json()
+#         # response = requests.get(url).json()
+#         response = requests.get(url, timeout=5).json()
 
 #         podcasts = []
 
@@ -167,6 +196,39 @@
 #         print("Podcast API error:", e)
 #         return []
 
+# # -----------------------------
+# # Fetch YouTube Videos
+# # -----------------------------
+# def fetch_youtube_videos(emotion):
+    
+#     # term = podcast_search_terms.get(emotion.lower(), "motivation")
+#     term = f"{emotion} motivation video"
+
+#     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={term}&key={YOUTUBE_API_KEY}&maxResults=2&type=video"
+
+#     try:
+#         response = requests.get(url, timeout=5).json()
+
+#         videos = []
+
+#         for item in response.get("items", []):
+#             video_id = item["id"]["videoId"]
+
+#             videos.append({
+#                 "id": video_id,
+#                 "title": item["snippet"]["title"],
+#                 "type": "Video",
+#                 "category": "Video",
+#                 "duration": "10 min",
+#                 "color": "bg-slate-50",
+#                 "sourceUrl": f"https://www.youtube.com/watch?v={video_id}"
+#             })
+
+#         return videos
+
+#     except Exception as e:
+#         print("YouTube API error:", e)
+#         return []
 
 # # -----------------------------
 # # Suggestion Generator
@@ -178,16 +240,29 @@
 
 #     results = {}
 
+#     # for content_type in data:
+
+#     #     items = data[content_type]
+
+#     #     if items:
+#     #         selected = random.sample(items, min(2, len(items)))
+#     #         results[content_type] = selected
+#     #     else:
+#     #         results[content_type] = []
+
 #     for content_type in data:
+
+#         if content_type == "video":
+#             continue
 
 #         items = data[content_type]
 
 #         if items:
-#             selected = random.sample(items, min(1, len(items)))
+#             selected = random.sample(items, min(2, len(items)))
 #             results[content_type] = selected
 #         else:
 #             results[content_type] = []
-
+        
 #     results["explore_more"] = {
 #         "music": f"https://www.youtube.com/results?search_query={strategy}+music",
 #         "exercise": f"https://www.youtube.com/results?search_query={strategy}+exercise",
@@ -198,6 +273,11 @@
 #     return results
 
 
+# @app.route("/", methods=["GET"])
+# def home():
+#     return jsonify({
+#         "message": "SoulEase Emotion API is running 🚀"
+#     })
 # # -----------------------------
 # # MAIN PREDICTION ROUTE
 # # -----------------------------
@@ -356,15 +436,30 @@
 #         podcasts = fetch_podcasts(emotion)
 #         if podcasts:
 #             dynamic_suggestions["podcast"] = podcasts
+            
+#         # YouTube Videos
+#         videos = fetch_youtube_videos(emotion)
+#         if videos:
+#             dynamic_suggestions["video"] = videos
 
 #         # Save journal
-#         journal_collection.insert_one({
-#             "userId": user_id,
-#             "text": text,
-#             "emotion": emotion,
-#             "confidence": round(confidence * 100, 2),
-#             "timestamp": datetime.utcnow()
-#         })
+#         # journal_collection.insert_one({
+#         #     "userId": user_id,
+#         #     "text": text,
+#         #     "emotion": emotion,
+#         #     "confidence": round(confidence * 100, 2),
+#         #     "timestamp": datetime.utcnow()
+#         # })
+#         try:
+#             journal_collection.insert_one({
+#                 "userId": user_id,
+#                 "text": text,
+#                 "emotion": emotion,
+#                 "confidence": round(confidence * 100, 2),
+#                 "timestamp": datetime.utcnow()
+#             })
+#         except Exception as e:
+#             print("MongoDB error:", e)
 
 #         # return jsonify({
 #         #     "emotion": emotion,
@@ -383,12 +478,20 @@
 
 #     except Exception as e:
 
-#         print("Prediction error:", e)
+#         # print("Prediction error:", e)
+#         import traceback
+#         traceback.print_exc()
 
+#         # return jsonify({
+#         #     "emotion": "neutral",
+#         #     "confidence": 50,
+#         #     "suggestions": {}
+#         # })
 #         return jsonify({
 #             "emotion": "neutral",
 #             "confidence": 50,
-#             "suggestions": {}
+#             "suggestions": {},
+#             "error": "Emotion service failed"
 #         })
 
 # # -----------------------------
@@ -410,12 +513,58 @@
 #         result = whisper_model.transcribe(temp_path)
 
 #         text = result["text"].strip()
+        
+#         # 🔥 Detect emotion using SAME logic as /predict
+
+#         results = emotion_pipeline(text)[0]
+
+#         emotion_scores = {}
+
+#         for item in results:
+#             emo = item["label"]
+#             score = item["score"]
+#             emotion_scores[emo] = score
+
+#         # Normalize
+#         total = sum(emotion_scores.values())
+
+#         if total == 0:
+#             emotion = "neutral"
+#         else:
+#             for emo in emotion_scores:
+#                 emotion_scores[emo] /= total
+
+#             sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
+#             emotion = sorted_emotions[0][0]
+
+#         # 🔥 Get suggestions
+#         dynamic_suggestions = get_dynamic_suggestions(emotion)
+
+#         # Music
+#         music = fetch_music_from_jamendo(emotion)
+#         if music:
+#             dynamic_suggestions["music"] = music
+
+#         # Podcast
+#         podcasts = fetch_podcasts(emotion)
+#         if podcasts:
+#             dynamic_suggestions["podcast"] = podcasts
+
+#         # Video
+#         videos = fetch_youtube_videos(emotion)
+#         if videos:
+#             dynamic_suggestions["video"] = videos
 
 #         os.remove(temp_path)
 
+#         # return jsonify({
+#         #     "text": text
+#         # })
 #         return jsonify({
-#             "text": text
-#         })
+#     "text": text,
+#     "emotion": emotion,
+#     "suggestions": dynamic_suggestions
+# })
 
 #     except Exception as e:
 
@@ -427,30 +576,65 @@
 #         return jsonify({
 #             "text": ""
 #         })
+        
+# # ===== FASTAPI WRAPPERS =====
+# @fastapi_app.post("/predict")
+# async def predict_api(data: dict):
+#     with app.test_client() as c:
+#         res = c.post("/predict", json=data)
+#         return res.get_json()
 
 
+# @fastapi_app.post("/speech-to-text")
+# async def speech_api(audio: UploadFile = File(...)):
+#     return {
+#         "text": "",
+#         "emotion": "feature_disabled",
+#         "suggestions": {}
+#     }
+#     temp_path = "temp_audio.wav"
+
+#     with open(temp_path, "wb") as f:
+#         f.write(await audio.read())
+
+#     result = whisper_model.transcribe(temp_path)
+#     text = result["text"].strip()
+
+#     os.remove(temp_path)
+
+#     results = emotion_pipeline(text)[0]
+
+#     emotion_scores = {}
+#     for item in results:
+#         emotion_scores[item["label"]] = item["score"]
+
+#     sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
+#     emotion = sorted_emotions[0][0]
+
+#     dynamic_suggestions = get_dynamic_suggestions(emotion)
+
+#     return {
+#         "text": text,
+#         "emotion": emotion,
+#         "suggestions": dynamic_suggestions
+#     }
+
+
+# # if __name__ == "__main__":
+
+# #     print("🚀 SoulEase Emotion Server Running...")
+
+#     # app.run(
+#     #     host="0.0.0.0",
+#     #     port=5001,
+#     #     debug=True,
+#     #     use_reloader=False
+#     # )
+# # if __name__ == "__main__":
+# #     uvicorn.run("app:fastapi_app", host="0.0.0.0", port=7860)
 # if __name__ == "__main__":
-
-#     print("🚀 SoulEase Emotion Server Running...")
-
-#     app.run(
-#         host="0.0.0.0",
-#         port=5001,
-#         debug=True,
-#         use_reloader=False
-#     )
-
-
-
-
-
-
-
-# the real-one
-# ------------------------------------------------------------------------------------------------
-
-
-
+#     port = int(os.environ.get("PORT", 10000))
+#     uvicorn.run("app:fastapi_app", host="0.0.0.0", port=port)
 
 
 
@@ -462,14 +646,11 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-# from collections import Counter
-# from pydoc import text
 import traceback
 from dotenv import load_dotenv
 load_dotenv()
-# load_dotenv("../backend/.env")
+
 import os
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 from flask_cors import CORS
 from flask import Flask, request, jsonify
 from transformers import pipeline
@@ -478,16 +659,15 @@ from datetime import datetime
 import json
 import random
 import requests
-import whisper
-import os
 import re
-# from datasets import load_dataset
-# dataset = load_dataset("go_emotions")
+
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
 app = Flask(__name__)
 CORS(app)
 
 fastapi_app = FastAPI()
+
 @fastapi_app.get("/")
 def home():
     return {"message": "SoulEase Emotion API is running 🚀"}
@@ -501,44 +681,32 @@ fastapi_app.add_middleware(
 )
 
 print("🔥 Starting SoulEase Emotion Server...")
-print("🔥 Loading Pretrained Emotion Model...")
+print("🔥 Loading Emotion Model...")
 
-# -----------------------------
-# Emotion Detection Model
-# -----------------------------
+# Emotion Model
 emotion_pipeline = pipeline(
     "text-classification",
-    # model="j-hartmann/emotion-english-distilroberta-base"
     model="SamLowe/roberta-base-go_emotions",
-    return_all_scores=True 
+    return_all_scores=True
 )
 
-print("✅ Emotion Model Loaded Successfully!")
+print("✅ Emotion Model Loaded!")
 
-# -----------------------------
-# Whisper Speech Model
-# -----------------------------
-print("🎤 Loading Whisper Model...")
-# whisper_model = whisper.load_model("base")
-# whisper_model = whisper.load_model("tiny")
-print("✅ Whisper Model Loaded!")
+# MongoDB (SAFE)
+try:
+    client = MongoClient(os.environ.get("MONGO_URI"))
+    db = client["soulease"]
+    journal_collection = db["journal_entries"]
+    print("✅ MongoDB Connected")
+except Exception as e:
+    print("❌ MongoDB Error:", e)
+    journal_collection = None
 
-# -----------------------------
-# MongoDB Connection
-# -----------------------------
-client = MongoClient("mongodb://127.0.0.1:27017/")
-db = client["soulease"]
-journal_collection = db["journal_entries"]
-
-# -----------------------------
-# Load Suggestions JSON
-# -----------------------------
+# Load Suggestions
 with open("suggestions.json", "r") as f:
     suggestion_data = json.load(f)
 
-# -----------------------------
-# Emotion → Strategy Mapping
-# -----------------------------
+# Emotion Strategy
 emotion_strategy = {
     "sadness": "uplift",
     "anger": "calm",
@@ -548,9 +716,6 @@ emotion_strategy = {
     "surprise": "energize"
 }
 
-# -----------------------------
-# Jamendo API Setup
-# -----------------------------
 JAMENDO_CLIENT_ID = "4cae87d6"
 
 emotion_music_tags = {
@@ -562,9 +727,6 @@ emotion_music_tags = {
     "surprise": "chill"
 }
 
-# -----------------------------
-# Podcast Search Terms
-# -----------------------------
 podcast_search_terms = {
     "sadness": "mental health podcast",
     "anger": "calming podcast",
@@ -575,512 +737,145 @@ podcast_search_terms = {
 }
 
 # -----------------------------
-# Fetch Dynamic Music
+# API HELPERS
 # -----------------------------
 def fetch_music_from_jamendo(emotion):
-
     tag = emotion_music_tags.get(emotion.lower(), "chill")
-
     url = f"https://api.jamendo.com/v3.0/tracks/?client_id={JAMENDO_CLIENT_ID}&tags={tag}&limit=3&audioformat=mp32"
 
     try:
-
-        # response = requests.get(url).json()
         response = requests.get(url, timeout=5).json()
-
-        music_results = []
+        results = []
 
         for track in response.get("results", []):
-
-            audio_url = track.get("audio")
-
-            if not audio_url:
+            if not track.get("audio"):
                 continue
 
-            music_results.append({
+            results.append({
                 "id": str(track.get("id")),
                 "title": f"{track['name']} - {track['artist_name']}",
                 "type": "Music",
-                "category": "Music",
-                "duration": "3 min",
-                "color": "bg-slate-50",
-                "sourceUrl": audio_url
+                "sourceUrl": track.get("audio")
             })
 
-        return music_results
-
-    except Exception as e:
-
-        print("Jamendo API error:", e)
+        return results
+    except:
         return []
 
-
-# -----------------------------
-# Fetch Podcasts
-# -----------------------------
 def fetch_podcasts(emotion):
-
     term = podcast_search_terms.get(emotion.lower(), "mindfulness podcast")
-
     url = f"https://itunes.apple.com/search?term={term}&media=podcast&limit=3"
 
     try:
-
-        # response = requests.get(url).json()
         response = requests.get(url, timeout=5).json()
-
-        podcasts = []
-
-        for item in response.get("results", []):
-
-            podcasts.append({
-                "id": str(item.get("collectionId")),
-                "title": item.get("collectionName"),
-                "type": "Podcast",
-                "category": "Podcast",
-                "duration": "10 min",
-                "color": "bg-slate-50",
-                "sourceUrl": item.get("trackViewUrl")
-            })
-
-        return podcasts
-
-    except Exception as e:
-
-        print("Podcast API error:", e)
+        return [{
+            "id": str(item.get("collectionId")),
+            "title": item.get("collectionName"),
+            "type": "Podcast",
+            "sourceUrl": item.get("trackViewUrl")
+        } for item in response.get("results", [])]
+    except:
         return []
 
-# -----------------------------
-# Fetch YouTube Videos
-# -----------------------------
 def fetch_youtube_videos(emotion):
-    
-    # term = podcast_search_terms.get(emotion.lower(), "motivation")
-    term = f"{emotion} motivation video"
-
-    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={term}&key={YOUTUBE_API_KEY}&maxResults=2&type=video"
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={emotion} motivation&key={YOUTUBE_API_KEY}&maxResults=2&type=video"
 
     try:
         response = requests.get(url, timeout=5).json()
-
-        videos = []
-
-        for item in response.get("items", []):
-            video_id = item["id"]["videoId"]
-
-            videos.append({
-                "id": video_id,
-                "title": item["snippet"]["title"],
-                "type": "Video",
-                "category": "Video",
-                "duration": "10 min",
-                "color": "bg-slate-50",
-                "sourceUrl": f"https://www.youtube.com/watch?v={video_id}"
-            })
-
-        return videos
-
-    except Exception as e:
-        print("YouTube API error:", e)
+        return [{
+            "id": item["id"]["videoId"],
+            "title": item["snippet"]["title"],
+            "type": "Video",
+            "sourceUrl": f"https://www.youtube.com/watch?v={item['id']['videoId']}"
+        } for item in response.get("items", [])]
+    except:
         return []
 
-# -----------------------------
-# Suggestion Generator
-# -----------------------------
 def get_dynamic_suggestions(emotion):
-
     strategy = emotion_strategy.get(emotion.lower(), "uplift")
     data = suggestion_data.get(strategy, {})
 
     results = {}
-
-    # for content_type in data:
-
-    #     items = data[content_type]
-
-    #     if items:
-    #         selected = random.sample(items, min(2, len(items)))
-    #         results[content_type] = selected
-    #     else:
-    #         results[content_type] = []
-
-    for content_type in data:
-
-        if content_type == "video":
-            continue
-
-        items = data[content_type]
-
-        if items:
-            selected = random.sample(items, min(2, len(items)))
-            results[content_type] = selected
-        else:
-            results[content_type] = []
-        
-    results["explore_more"] = {
-        "music": f"https://www.youtube.com/results?search_query={strategy}+music",
-        "exercise": f"https://www.youtube.com/results?search_query={strategy}+exercise",
-        "podcast": f"https://www.youtube.com/results?search_query={strategy}+podcast",
-        "video": f"https://www.youtube.com/results?search_query={strategy}+motivational+video"
-    }
+    for key in data:
+        items = data[key]
+        results[key] = random.sample(items, min(2, len(items))) if items else []
 
     return results
 
-
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "message": "SoulEase Emotion API is running 🚀"
-    })
 # -----------------------------
-# MAIN PREDICTION ROUTE
+# MAIN API
 # -----------------------------
 @app.route("/predict", methods=["POST"])
 def predict():
-
     data = request.json
 
     if not data or "text" not in data:
-        return jsonify({"error": "Text field is required"}), 400
+        return jsonify({"error": "Text required"}), 400
 
     text = data["text"]
-    user_id = data.get("userId", "demo_user")
 
     try:
+        results = emotion_pipeline(text)[0]
+        sorted_emotions = sorted(results, key=lambda x: x["score"], reverse=True)
 
-        # sentences = [s.strip() for s in re.split(r'[.!?]| but | however | although ', text.lower()) if s.strip()]
-        sentences = [s.strip() for s in re.split(r'[.!?]| but | however | although ', text.lower()) if s.strip()]
+        emotion = sorted_emotions[0]["label"]
+        confidence = sorted_emotions[0]["score"]
 
-        if not sentences:
-            sentences = [text.lower()]
-        
-        emotion_scores = {}
-        
-        for i, sentence in enumerate(sentences):
-            # results = emotion_pipeline(sentence, top_k=None)
-            results = emotion_pipeline(sentence)[0]   # 🔥 FIX
-            
+        suggestions = get_dynamic_suggestions(emotion)
 
-            weight = (i + 1) / len(sentences)
+        suggestions["music"] = fetch_music_from_jamendo(emotion)
+        suggestions["podcast"] = fetch_podcasts(emotion)
+        suggestions["video"] = fetch_youtube_videos(emotion)
 
-            for item in results:
-                emo = item["label"]
-                score = item["score"] * weight
+        if journal_collection:
+            try:
+                journal_collection.insert_one({
+                    "text": text,
+                    "emotion": emotion,
+                    "confidence": confidence,
+                    "timestamp": datetime.utcnow()
+                })
+            except:
+                pass
 
-                emotion_scores[emo] = emotion_scores.get(emo, 0) + score
-
-        # 🔥 sharpen emotional differences
-        for emo in emotion_scores:
-            emotion_scores[emo] = emotion_scores[emo] ** 1.3
-        total = sum(emotion_scores.values())
-
-        if total == 0:
-            emotion = "neutral"
-            secondary_emotion = None
-            confidence = 0.5
-            sorted_emotions = []
-            intensity = "low"
-        else:
-            for emo in emotion_scores:
-                emotion_scores[emo] /= total
-
-            # sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
-            sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
-
-            emotion = sorted_emotions[0][0]
-            confidence = sorted_emotions[0][1]
-
-            # if sorted_emotions and sorted_emotions[0][0] == "neutral":
-            #     for emo, score in sorted_emotions:
-            #         if emo != "neutral" and score > 0.1:
-            #             emotion = emo
-            #             confidence = score
-            #             break
-
-            # non_neutral = [e for e in sorted_emotions if e[0] != "neutral"]
-
-            # if non_neutral:
-            #     top_non_neutral = non_neutral[0]
-
-
-            #     if sorted_emotions[0][0] == "neutral" and top_non_neutral[1] > 0.2:
-            #         emotion = top_non_neutral[0]
-            #         confidence = top_non_neutral[1]
-            
-
-            # if sorted_emotions and sorted_emotions[0][0] == "neutral" and len(sorted_emotions) > 1:
-            #     if sorted_emotions[1][1] > 0.15:  
-            #         emotion = sorted_emotions[1][0]
-            #         confidence = sorted_emotions[1][1]
-            
-            # ✅ Clean neutral handling (ONLY this logic)
-            top_emotion, top_score = sorted_emotions[0]
-
-            if top_emotion == "neutral":
-                for emo, score in sorted_emotions[1:]:
-                    if score > 0.15:   # meaningful emotion
-                        top_emotion = emo
-                        top_score = score
-                        break
-
-            emotion = top_emotion
-            confidence = top_score
-            
-            # ✅ ADD HERE
-            if emotion == "desire":
-                regret_patterns = ["wish i had", "should have", "could have", "if only", "replaying"]
-
-                if any(p in text.lower() for p in regret_patterns):
-                    emotion = "remorse"
-            
-            if confidence > 0.75:
-                intensity = "high"
-            elif confidence > 0.45:
-                intensity = "medium"
-            else:
-                intensity = "low"
-
-            
-            # if len(sorted_emotions) > 1:
-            #     second_emotion, second_score = sorted_emotions[1]
-
-            # # shift only if weak dominance
-            # if confidence < 0.5 and second_score > 0.1:
-            #     emotion = second_emotion
-            #     confidence = second_score
-            
-            if len(sorted_emotions) > 1:
-                second_emotion, second_score = sorted_emotions[1]
-            
-            # secondary_emotion = None
-            
-            # for emo, score in sorted_emotions[1:]:
-            #     if emo != "neutral" and score > 0.05:
-            #         secondary_emotion = emo
-            #         break
-            secondary_emotion = None
-
-            # if len(sorted_emotions) > 1:
-            #     second_emotion, second_score = sorted_emotions[1]
-
-            # if second_emotion != emotion and second_score > 0.15:
-            #         secondary_emotion = second_emotion
-            # secondary_emotion = None
-
-            for emo, score in sorted_emotions[1:]:
-                if emo != "neutral" and emo != emotion and score > 0.18:
-                    secondary_emotion = emo
-                    break
-                    
-            is_conflicted = False
-
-            non_neutral = [e for e in sorted_emotions if e[0] != "neutral"]
-            if secondary_emotion and len(non_neutral) > 1:
-                    if abs(non_neutral[0][1] - non_neutral[1][1]) < 0.15:
-                        is_conflicted = True
-       
-        dynamic_suggestions = get_dynamic_suggestions(emotion)
-
-        # Music
-        jamendo_music = fetch_music_from_jamendo(emotion)
-        if jamendo_music:
-            dynamic_suggestions["music"] = jamendo_music
-
-        # Podcast
-        podcasts = fetch_podcasts(emotion)
-        if podcasts:
-            dynamic_suggestions["podcast"] = podcasts
-            
-        # YouTube Videos
-        videos = fetch_youtube_videos(emotion)
-        if videos:
-            dynamic_suggestions["video"] = videos
-
-        # Save journal
-        # journal_collection.insert_one({
-        #     "userId": user_id,
-        #     "text": text,
-        #     "emotion": emotion,
-        #     "confidence": round(confidence * 100, 2),
-        #     "timestamp": datetime.utcnow()
-        # })
-        try:
-            journal_collection.insert_one({
-                "userId": user_id,
-                "text": text,
-                "emotion": emotion,
-                "confidence": round(confidence * 100, 2),
-                "timestamp": datetime.utcnow()
-            })
-        except Exception as e:
-            print("MongoDB error:", e)
-
-        # return jsonify({
-        #     "emotion": emotion,
-        #     "confidence": round(confidence * 100, 2),
-        #     "suggestions": dynamic_suggestions
-        # })
         return jsonify({
             "emotion": emotion,
-            "secondary_emotion": secondary_emotion,
             "confidence": round(confidence * 100, 2),
-            "intensity": intensity,
-            "all_emotions": sorted_emotions, 
-            "suggestions": dynamic_suggestions,
-            "is_conflicted": is_conflicted,
+            "suggestions": suggestions
         })
 
     except Exception as e:
-
-        # print("Prediction error:", e)
-        import traceback
         traceback.print_exc()
-
-        # return jsonify({
-        #     "emotion": "neutral",
-        #     "confidence": 50,
-        #     "suggestions": {}
-        # })
-        return jsonify({
-            "emotion": "neutral",
-            "confidence": 50,
-            "suggestions": {},
-            "error": "Emotion service failed"
-        })
+        return jsonify({"error": "Prediction failed"})
 
 # -----------------------------
-# SPEECH TO TEXT ROUTE
+# DISABLED VOICE
 # -----------------------------
 @app.route("/speech-to-text", methods=["POST"])
 def speech_to_text():
+    return jsonify({
+        "text": "",
+        "emotion": "feature_disabled",
+        "suggestions": {}
+    })
 
-    if "audio" not in request.files:
-        return jsonify({"error": "Audio file required"}), 400
-
-    audio_file = request.files["audio"]
-
-    temp_path = "temp_audio.wav"
-    audio_file.save(temp_path)
-
-    try:
-
-        result = whisper_model.transcribe(temp_path)
-
-        text = result["text"].strip()
-        
-        # 🔥 Detect emotion using SAME logic as /predict
-
-        results = emotion_pipeline(text)[0]
-
-        emotion_scores = {}
-
-        for item in results:
-            emo = item["label"]
-            score = item["score"]
-            emotion_scores[emo] = score
-
-        # Normalize
-        total = sum(emotion_scores.values())
-
-        if total == 0:
-            emotion = "neutral"
-        else:
-            for emo in emotion_scores:
-                emotion_scores[emo] /= total
-
-            sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
-            emotion = sorted_emotions[0][0]
-
-        # 🔥 Get suggestions
-        dynamic_suggestions = get_dynamic_suggestions(emotion)
-
-        # Music
-        music = fetch_music_from_jamendo(emotion)
-        if music:
-            dynamic_suggestions["music"] = music
-
-        # Podcast
-        podcasts = fetch_podcasts(emotion)
-        if podcasts:
-            dynamic_suggestions["podcast"] = podcasts
-
-        # Video
-        videos = fetch_youtube_videos(emotion)
-        if videos:
-            dynamic_suggestions["video"] = videos
-
-        os.remove(temp_path)
-
-        # return jsonify({
-        #     "text": text
-        # })
-        return jsonify({
-    "text": text,
-    "emotion": emotion,
-    "suggestions": dynamic_suggestions
-})
-
-    except Exception as e:
-
-        print("Whisper error:", e)
-
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
-        return jsonify({
-            "text": ""
-        })
-        
-# ===== FASTAPI WRAPPERS =====
 @fastapi_app.post("/predict")
 async def predict_api(data: dict):
     with app.test_client() as c:
         res = c.post("/predict", json=data)
         return res.get_json()
 
-
 @fastapi_app.post("/speech-to-text")
 async def speech_api(audio: UploadFile = File(...)):
-    temp_path = "temp_audio.wav"
-
-    with open(temp_path, "wb") as f:
-        f.write(await audio.read())
-
-    result = whisper_model.transcribe(temp_path)
-    text = result["text"].strip()
-
-    os.remove(temp_path)
-
-    results = emotion_pipeline(text)[0]
-
-    emotion_scores = {}
-    for item in results:
-        emotion_scores[item["label"]] = item["score"]
-
-    sorted_emotions = sorted(emotion_scores.items(), key=lambda x: x[1], reverse=True)
-    emotion = sorted_emotions[0][0]
-
-    dynamic_suggestions = get_dynamic_suggestions(emotion)
-
     return {
-        "text": text,
-        "emotion": emotion,
-        "suggestions": dynamic_suggestions
+        "text": "",
+        "emotion": "feature_disabled",
+        "suggestions": {}
     }
 
-
-# if __name__ == "__main__":
-
-#     print("🚀 SoulEase Emotion Server Running...")
-
-    # app.run(
-    #     host="0.0.0.0",
-    #     port=5001,
-    #     debug=True,
-    #     use_reloader=False
-    # )
-# if __name__ == "__main__":
-#     uvicorn.run("app:fastapi_app", host="0.0.0.0", port=7860)
+# -----------------------------
+# RUN
+# -----------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run("app:fastapi_app", host="0.0.0.0", port=port)
