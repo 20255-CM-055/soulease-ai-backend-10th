@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+flask
+flask-cors
+requests
+python-dotenv
+transformers
+torch
+pymongo
+openai-whisper
