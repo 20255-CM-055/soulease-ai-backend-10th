@@ -5,6 +5,6 @@ flask-cors
 requests
 python-dotenv
 transformers==4.40.2
-torch==2.1.2
+torch==2.9.0
 pymongo
 openai-whisper
