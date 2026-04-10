@@ -520,7 +520,7 @@ print("✅ Emotion Model Loaded Successfully!")
 # -----------------------------
 print("🎤 Loading Whisper Model...")
 # whisper_model = whisper.load_model("base")
-whisper_model = whisper.load_model("tiny")
+# whisper_model = whisper.load_model("tiny")
 print("✅ Whisper Model Loaded!")
 
 # -----------------------------
